@@ -1,0 +1,1021 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+  <title>キャラタイピング</title>
+
+  <style>
+    :root {
+      --bg-dark: #030508;
+      --bg-gradient: radial-gradient(circle at 60% -20%, #1a233a 0%, #05060a 70%);
+
+      --glass: rgba(20, 25, 40, 0.85);
+      /* Slightly more opaque for better contrast */
+      --glass-border: rgba(255, 255, 255, 0.08);
+      --glass-highlight: rgba(255, 255, 255, 0.03);
+
+      --text: #eef2ff;
+      --muted: #94a3b8;
+
+      --primary: #3b82f6;
+      --cyan: #06b6d4;
+      --green: #10b981;
+      --pink: #f43f5e;
+      --gold: #f59e0b;
+
+      --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+      --glow: 0 0 15px rgba(59, 130, 246, 0.3);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+      background: var(--bg-dark);
+      background-image: var(--bg-gradient);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      /* Reduced padding */
+      overflow-x: hidden;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 1400px;
+      /* Much wider max-width to allow large image */
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      height: 95vh;
+      /* Occupy full height */
+    }
+
+    /* === Header / Meta === */
+    .top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-shrink: 0;
+      /* Prevent header from shrinking */
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 800;
+      margin: 0;
+      background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.05em;
+    }
+
+    .meta {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: rgba(30, 41, 59, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .badge span {
+      color: var(--text);
+      font-feature-settings: "tnum";
+      font-size: 14px;
+    }
+
+    /* === Main Grid === */
+    .grid {
+      display: grid;
+      /* Image gets more space (1.2fr) vs UI (1fr) */
+      grid-template-columns: 1.2fr 1fr;
+      gap: 20px;
+      align-items: stretch;
+      flex: 1;
+      /* Fill remaining height */
+      min-height: 0;
+      /* Important for grid within flex */
+    }
+
+    @media (max-width: 900px) {
+      .grid {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr auto;
+      }
+
+      .wrap {
+        height: auto;
+        display: block;
+      }
+
+      body {
+        height: auto;
+        padding: 20px;
+      }
+
+      .imgbox {
+        min-height: 300px;
+      }
+    }
+
+    .panel {
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* === Left Panel (Image) - Maximized === */
+    .panel.left {
+      padding: 0;
+      /* Remove padding for maximum image size */
+      background: rgba(0, 0, 0, 0.2);
+    }
+
+    .imgbox {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 50vh;
+      /* Ensure significant height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    img {
+      width: 100%;
+      height: 100%;
+      max-height: 85vh;
+      /* Allow image to be very tall */
+      object-fit: contain;
+      filter: drop-shadow(0 10px 40px rgba(0, 0, 0, 0.5));
+      transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+      transform-origin: center bottom;
+    }
+
+    /* Subtle hover effect on image */
+    .imgbox:hover img {
+      transform: scale(1.02);
+    }
+
+    /* Skip button overlay on image */
+    .controls.overlay-btn {
+      position: absolute;
+      bottom: 20px;
+      right: 20px;
+      z-index: 10;
+    }
+
+    /* === Right Panel (Game UI) === */
+    .panel.right {
+      justify-content: center;
+      gap: 20px;
+      padding: 32px;
+      /* Breathing room for UI */
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 12px 16px;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .hint b {
+      color: var(--text);
+    }
+
+    .guideBox {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 30px;
+      text-align: center;
+      box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+      width: 100%;
+      margin-bottom: 8px;
+    }
+
+    .guideBox .hint {
+      background: transparent;
+      padding: 0;
+      border: none;
+      margin-bottom: 16px;
+      font-size: 12px;
+      opacity: 0.7;
+    }
+
+    .romajiLine {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 36px;
+      /* Larger text */
+      font-weight: 500;
+      min-height: 52px;
+      letter-spacing: 0.05em;
+      word-break: break-all;
+      display: inline-block;
+    }
+
+    .ch {
+      transition: color 0.1s;
+      position: relative;
+    }
+
+    .ch.done {
+      color: var(--muted);
+      opacity: 0.4;
+    }
+
+    .ch.now {
+      color: var(--cyan);
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.6);
+      font-weight: 700;
+      border-bottom: 3px solid var(--cyan);
+    }
+
+    .ch.todo {
+      color: var(--text);
+    }
+
+    .flashWrong {
+      animation: shake 0.3s cubic-bezier(.36, .07, .19, .97) both;
+      color: var(--pink) !important;
+    }
+
+    @keyframes shake {
+
+      10%,
+      90% {
+        transform: translate3d(-1px, 0, 0);
+      }
+
+      20%,
+      80% {
+        transform: translate3d(2px, 0, 0);
+      }
+
+      30%,
+      50%,
+      70% {
+        transform: translate3d(-4px, 0, 0);
+      }
+
+      40%,
+      60% {
+        transform: translate3d(4px, 0, 0);
+      }
+    }
+
+    .pop {
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    @keyframes popIn {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    input {
+      width: 100%;
+      font-size: 24px;
+      /* Larger input text */
+      padding: 18px;
+      border-radius: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      background: rgba(15, 23, 42, 0.6);
+      color: var(--text);
+      text-align: center;
+      transition: all 0.2s ease;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+      background: rgba(15, 23, 42, 0.8);
+    }
+
+    .result {
+      height: 32px;
+      font-size: 20px;
+      font-weight: 700;
+      text-align: center;
+      margin-top: -10px;
+      transition: all 0.2s;
+    }
+
+    .result.ok {
+      color: var(--green);
+      text-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+    }
+
+    .result.ng {
+      color: var(--pink);
+      text-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: auto;
+    }
+
+    .controls.center {
+      justify-content: center;
+      width: 100%;
+    }
+
+    button {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+    }
+
+    #skipBtn {
+      font-size: 13px;
+      padding: 10px 20px;
+      background: rgba(0, 0, 0, 0.6);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    #skipBtn:hover {
+      background: rgba(0, 0, 0, 0.8);
+    }
+
+    #btn30,
+    #btn60 {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.3);
+      color: #bfdbfe;
+    }
+
+    #btn30:hover,
+    #btn60:hover {
+      background: rgba(59, 130, 246, 0.25);
+      border-color: rgba(59, 130, 246, 0.5);
+    }
+
+    #resetBtn {
+      background: rgba(244, 63, 94, 0.1);
+      border-color: rgba(244, 63, 94, 0.2);
+      color: #fecdd3;
+    }
+
+    #resetBtn:hover {
+      background: rgba(244, 63, 94, 0.2);
+    }
+
+    /* Modal */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal {
+      background: #111827;
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: 32px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+      text-align: center;
+      animation: popIn 0.3s ease-out;
+    }
+
+    .modal h2 {
+      margin: 0 0 20px;
+      font-size: 24px;
+      background: linear-gradient(to right, #fff, #94a3b8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .modal .line {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .modal .big {
+      font-size: 48px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1;
+      margin: 4px 0 24px;
+      text-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+    }
+
+    .modal b {
+      color: var(--text);
+    }
+
+    .modal .btnrow {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 32px;
+    }
+
+    .modal button {
+      padding: 12px 24px;
+      font-size: 16px;
+    }
+
+    #again60 {
+      background: var(--primary);
+      border-color: transparent;
+      color: white;
+    }
+
+    #again60:hover {
+      background: #2563eb;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.4);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <h1>キャラタイピング</h1>
+      <div class="meta">
+        <div class="badge">⏱ <span id="time">—</span></div>
+        <div class="badge">🎯 <span id="score">0</span></div>
+        <div class="badge">⌨ <span id="kpm">0</span></div>
+        <div class="badge">❌ <span id="miss">0</span></div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT (Maximized Image) -->
+      <div class="panel left">
+        <div class="imgbox">
+          <img id="charImg" alt="キャラ画像" />
+        </div>
+        <div class="controls overlay-btn">
+          <button id="skipBtn" type="button">スキップ ▶</button>
+        </div>
+      </div>
+
+      <!-- RIGHT (UI) -->
+      <div class="panel right">
+        <div class="guideBox">
+          <div class="hint">（GREEN=OK / BLUE=NEXT / WHITE=TODO）</div>
+          <div id="romaji" class="romajiLine"></div>
+        </div>
+
+        <input id="input" placeholder="ここに入力 (例: hatsunemiku)" autocomplete="off" autocapitalize="off"
+          spellcheck="false" />
+        <div id="result" class="result"></div>
+
+        <div class="hint" style="text-align: center; margin-top: 14px;">
+          <b>30s</b> / <b>60s</b> でスタート<br />
+          NO Enter required / <b>Backspace</b> 対応
+        </div>
+
+        <div class="controls center">
+          <button id="btn30" type="button">30秒スタ</button>
+          <button id="btn60" type="button">60秒スタ</button>
+          <button id="resetBtn" type="button">リセット</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Result Modal -->
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="modal">
+      <h2>RESULT</h2>
+      <div class="line">SCORE</div>
+      <div class="big"><span id="rScore">0</span></div>
+
+      <div
+        style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; background: rgba(0,0,0,0.2); padding: 16px; border-radius: 12px; margin-top: 12px;">
+        <div>
+          <div class="line" style="margin:0; font-size: 11px;">KPM</div>
+          <div style="font-size: 24px; font-weight: 700;"><span id="rKpm">0</span></div>
+        </div>
+        <div>
+          <div class="line" style="margin:0; font-size: 11px;">MISS</div>
+          <div style="font-size: 24px; font-weight: 700; color: var(--pink);"><span id="rMiss">0</span></div>
+        </div>
+      </div>
+
+      <div class="btnrow">
+        <button id="closeResult" type="button">閉じる</button>
+        <button id="again60" type="button">もう一回 (60秒)</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // ===== キャラデータ =====
+  const ITEMS = [
+    { name:"初音ミク", yomi:"はつね みく" },
+    { name:"鏡音リン", yomi:"かがみね りん" },
+    { name:"鏡音レン", yomi:"かがみね れん" },
+    { name:"巡音ルカ", yomi:"めぐりね るか" },
+    { name:"MEIKO",   yomi:"めいこ" },
+    { name:"KAITO",   yomi:"かいと" },
+    { name:"星乃一歌", yomi:"ほしの いちか" },
+    { name:"天馬咲希", yomi:"てんま さき" },
+    { name:"望月穂波", yomi:"もちづき ほなみ" },
+    { name:"日野森志歩", yomi:"ひのもり しほ" },
+    { name:"花里みのり", yomi:"はなさと みのり" },
+    { name:"桐谷遥", yomi:"きりたに はるか" },
+    { name:"桃井愛莉", yomi:"ももい あいり" },
+    { name:"日野森雫", yomi:"ひのもり しずく" },
+    { name:"小豆沢こはね", yomi:"あずさわ こはね" },
+    { name:"白石杏", yomi:"しらいし あん" },
+    { name:"東雲彰人", yomi:"しののめ あきと" },
+    { name:"青柳冬弥", yomi:"あおやぎ とうや" },
+    { name:"天馬司", yomi:"てんま つかさ" },
+    { name:"鳳えむ", yomi:"おおとり えむ" },
+    { name:"草薙寧々", yomi:"くさなぎ ねね" },
+    { name:"神代類", yomi:"かみしろ るい" },
+    { name:"宵崎奏", yomi:"よいざき かなで" },
+    { name:"朝比奈まふゆ", yomi:"あさひな まふゆ" },
+    { name:"東雲絵名", yomi:"しののめ えな" },
+    { name:"秋山瑞稀", yomi:"あきやま みずき" },
+  ];
+
+  // ===== 画像探索（file:// + 日本語ファイル名でも強い） =====
+  const DIR_CANDIDATES = ["images", "./images"];
+  const EXT_CANDIDATES = ["jpg","jpeg","png","webp","jpg_large","JPG","JPEG","PNG","WEBP","Jpg","Png","Webp"];
+
+  function normalizeYomi(y){ return (y ?? "").replace(/\s+/g," ").trim(); }
+  function yomiNoSpace(y){ return normalizeYomi(y).replace(/\s+/g,""); }
+  function buildBaseCandidates(name, yomi){
+    const y1 = normalizeYomi(yomi);
+    const y2 = yomiNoSpace(yomi);
+    return [
+      `${name}(${y1})`,
+      `${name} (${y1})`,
+      `${name}(${y2})`,
+      `${name} (${y2})`,
+    ];
+  }
+  function setCharacterImage(name, yomi, imgEl){
+    const bases = buildBaseCandidates(name, yomi);
+    let d=0, b=0, e=0;
+    const tryNext = () => {
+      if (d >= DIR_CANDIDATES.length) return;
+      if (b >= bases.length) { d++; b=0; e=0; tryNext(); return; }
+      if (e >= EXT_CANDIDATES.length) { b++; e=0; tryNext(); return; }
+
+      const dir = DIR_CANDIDATES[d];
+      const base = bases[b];
+      const ext = EXT_CANDIDATES[e++];
+
+      const filename = `${base}.${ext}`;
+      const url = encodeURI(`${dir}/${filename}`);
+
+      imgEl.onerror = tryNext;
+      imgEl.src = url;
+    };
+    tryNext();
+  }
+
+  // ===== 効果音（WebAudio） =====
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audioCtx = new AudioCtx();
+  function beep({freq=880, duration=0.06, type="square", gain=0.05} = {}){
+    const t0 = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+    osc.connect(g).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + duration + 0.01);
+  }
+  const seOk = ()=>{
+    beep({freq: 880, duration: 0.05, type:"square", gain:0.06});
+    beep({freq: 1320, duration: 0.05, type:"square", gain:0.05});
+  };
+  const seMiss = ()=> beep({freq: 180, duration: 0.10, type:"sawtooth", gain:0.05});
+
+  // ===== ひらがな→ローマ字（複数入力対応） =====
+  const ROMA_MAP_2 = {
+    "きゃ":["kya"], "きゅ":["kyu"], "きょ":["kyo"],
+    "ぎゃ":["gya"], "ぎゅ":["gyu"], "ぎょ":["gyo"],
+    "しゃ":["sha","sya"], "しゅ":["shu","syu"], "しょ":["sho","syo"],
+    "じゃ":["ja","zya","jya"], "じゅ":["ju","zyu","jyu"], "じょ":["jo","zyo","jyo"],
+    "ちゃ":["cha","tya"], "ちゅ":["chu","tyu"], "ちょ":["cho","tyo"],
+    "にゃ":["nya"], "にゅ":["nyu"], "にょ":["nyo"],
+    "ひゃ":["hya"], "ひゅ":["hyu"], "ひょ":["hyo"],
+    "みゃ":["mya"], "みゅ":["myu"], "みょ":["myo"],
+    "りゃ":["rya"], "りゅ":["ryu"], "りょ":["ryo"],
+    "びゃ":["bya"], "びゅ":["byu"], "びょ":["byo"],
+    "ぴゃ":["pya"], "ぴゅ":["pyu"], "ぴょ":["pyo"],
+  };
+
+  const ROMA_MAP_1 = {
+    "あ":["a"], "い":["i"], "う":["u"], "え":["e"], "お":["o"],
+    "か":["ka"], "き":["ki"], "く":["ku"], "け":["ke"], "こ":["ko"],
+    "さ":["sa"], "し":["shi","si"], "す":["su"], "せ":["se"], "そ":["so"],
+    "た":["ta"], "ち":["chi","ti"], "つ":["tsu","tu"], "て":["te"], "と":["to"],
+    "な":["na"], "に":["ni"], "ぬ":["nu"], "ね":["ne"], "の":["no"],
+    "は":["ha"], "ひ":["hi"], "ふ":["fu","hu"], "へ":["he"], "ほ":["ho"],
+    "ま":["ma"], "み":["mi"], "む":["mu"], "め":["me"], "も":["mo"],
+    "や":["ya"], "ゆ":["yu"], "よ":["yo"],
+    "ら":["ra"], "り":["ri"], "る":["ru"], "れ":["re"], "ろ":["ro"],
+    "わ":["wa"], "を":["wo","o"],
+    "が":["ga"], "ぎ":["gi"], "ぐ":["gu"], "げ":["ge"], "ご":["go"],
+    "ざ":["za"], "じ":["ji","zi"], "ず":["zu"], "ぜ":["ze"], "ぞ":["zo"],
+    "だ":["da"], "ぢ":["ji","di"], "づ":["zu","du"], "で":["de"], "ど":["do"],
+    "ば":["ba"], "び":["bi"], "ぶ":["bu"], "べ":["be"], "ぼ":["bo"],
+    "ぱ":["pa"], "ぴ":["pi"], "ぷ":["pu"], "ぺ":["pe"], "ぽ":["po"],
+
+    "ぁ":["a"], "ぃ":["i"], "ぅ":["u"], "ぇ":["e"], "ぉ":["o"],
+    "ゃ":["ya"], "ゅ":["yu"], "ょ":["yo"],
+
+    "ん":["n","nn"],
+  };
+
+  function tokenizeKana(yomi){
+    const s = (yomi ?? "").replace(/\s+/g,"").trim();
+    const tokens = [];
+    for(let i=0; i<s.length; i++){
+      const c = s[i];
+      if(c === "っ"){ tokens.push("っ"); continue; }
+      const two = s.slice(i, i+2);
+      if(ROMA_MAP_2[two]){
+        tokens.push(two);
+        i++;
+      }else{
+        tokens.push(c);
+      }
+    }
+    return tokens;
+  }
+
+  function applySokuonToOptions(nextOpts){
+    // っ + 次のローマ字の先頭子音を重ねる（例：chi -> cchi / shi -> sshi）
+    return nextOpts.map(opt=>{
+      const first = opt[0] ?? "";
+      if(!first) return opt;
+      // 母音始まりはそのまま（ほぼ出ないが安全）
+      if("aeiou".includes(first)) return opt;
+      return first + opt;
+    });
+  }
+
+  function buildRomajiVariants(yomi, limit=256){
+    const tokens = tokenizeKana(yomi);
+    let optionsPerToken = [];
+    let pendingSokuon = false;
+
+    for(const t of tokens){
+      if(t === "っ"){ pendingSokuon = true; continue; }
+
+      let opts = ROMA_MAP_2[t] || ROMA_MAP_1[t] || [t]; // 未定義はそのまま
+      if(pendingSokuon){
+        opts = applySokuonToOptions(opts);
+        pendingSokuon = false;
+      }
+      optionsPerToken.push(opts);
+    }
+
+    // canonical（表示用）は各トークンの先頭候補で合成
+    const canonical = optionsPerToken.map(o=>o[0]).join("").toLowerCase();
+
+    // 変換候補（爆発しないように上限つきで生成）
+    let variants = [""];
+    for(const opts of optionsPerToken){
+      const next = [];
+      for(const base of variants){
+        for(const opt of opts){
+          if(next.length >= limit) break;
+          next.push((base + opt).toLowerCase());
+        }
+        if(next.length >= limit) break;
+      }
+      variants = next;
+      if(variants.length >= limit) break;
+    }
+
+    // 重複排除
+    variants = Array.from(new Set(variants));
+
+    return { canonical, variants };
+  }
+
+  const esc = s => s.replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+  function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+  // ===== DOM =====
+  const elImg = document.getElementById("charImg");
+  const elRomaji = document.getElementById("romaji");
+  const elInput = document.getElementById("input");
+  const elResult = document.getElementById("result");
+  const elScore = document.getElementById("score");
+  const elMiss = document.getElementById("miss");
+  const elTime = document.getElementById("time");
+  const elKpm = document.getElementById("kpm");
+  const overlay = document.getElementById("overlay");
+  const rScore = document.getElementById("rScore");
+  const rKpm = document.getElementById("rKpm");
+  const rMiss = document.getElementById("rMiss");
+
+  // ===== 状態 =====
+  let deck = [];
+  let current = null;
+
+  let canonical = "";
+  let variants = [];
+  let typed = ""; // 入力済み（自前管理）
+  let displayTarget = ""; // ガイド表示用（typedに合う候補を選ぶ）
+
+  let score = 0;
+  let miss = 0;
+
+  let timer = null;
+  let timeLeft = 60;
+  let startTime = 0;
+  let typedCount = 0;
+
+  function pickDisplayTarget(){
+    // typed を前方一致する候補を優先して表示（なければcanonical）
+    const v = variants.find(s => s.startsWith(typed));
+    return v || canonical || "";
+  }
+
+  function renderGuide(){
+    displayTarget = pickDisplayTarget();
+    const progress = typed.length;
+
+    elRomaji.innerHTML = displayTarget.split("").map((ch,i)=>{
+      const cls = "ch " + (i < progress ? "done" : i === progress ? "now" : "todo");
+      return `<span class="${cls}" data-i="${i}">${esc(ch)}</span>`;
+    }).join("") || '<span class="hint">（ここにローマ字が出ます）</span>';
+  }
+
+  function flashWrong(){
+    const span = elRomaji.querySelector(`span[data-i="${typed.length}"]`);
+    if(!span) return;
+    span.classList.remove("flashWrong");
+    void span.offsetWidth;
+    span.classList.add("flashWrong");
+  }
+
+  function popGuide(){
+    elRomaji.classList.add("pop");
+    setTimeout(()=>elRomaji.classList.remove("pop"), 220);
+  }
+
+  function nextQuestion(){
+    if(deck.length === 0) deck = shuffle([...ITEMS]);
+    current = deck.pop();
+
+    // 画像
+    setCharacterImage(current.name, current.yomi, elImg);
+
+    // ローマ字候補
+    const built = buildRomajiVariants(current.yomi, 256);
+    canonical = built.canonical;
+    variants = built.variants;
+
+    typed = "";
+    renderGuide();
+    popGuide();
+
+    elResult.textContent = "";
+    elResult.className = "result";
+
+    elInput.value = "";
+    elInput.focus();
+  }
+
+  function updateKpm(){
+    const minutes = (Date.now() - startTime) / 60000;
+    const kpm = minutes > 0 ? Math.round(typedCount / minutes) : 0;
+    elKpm.textContent = kpm;
+    return kpm;
+  }
+
+  function startGame(sec){
+    if (audioCtx.state === "suspended") audioCtx.resume();
+
+    stopGame();
+    closeResult();
+
+    score = 0; miss = 0; typedCount = 0;
+    elScore.textContent = score;
+    elMiss.textContent = miss;
+    elKpm.textContent = "0";
+    elResult.textContent = "";
+    elResult.className = "result";
+
+    timeLeft = sec;
+    elTime.textContent = `${timeLeft}s`;
+
+    startTime = Date.now();
+    deck = shuffle([...ITEMS]);
+    nextQuestion();
+
+    timer = setInterval(()=>{
+      timeLeft--;
+      elTime.textContent = `${timeLeft}s`;
+      updateKpm();
+      if(timeLeft <= 0) endGame();
+    }, 1000);
+  }
+
+  function stopGame(){
+    if(timer){ clearInterval(timer); timer = null; }
+  }
+
+  function endGame(){
+    stopGame();
+    const kpm = updateKpm();
+    rScore.textContent = score;
+    rKpm.textContent = kpm;
+    rMiss.textContent = miss;
+    overlay.style.display = "flex";
+    overlay.setAttribute("aria-hidden","false");
+  }
+
+  function closeResult(){
+    overlay.style.display = "none";
+    overlay.setAttribute("aria-hidden","true");
+  }
+
+  function resetGame(){
+    stopGame();
+    closeResult();
+
+    score = 0; miss = 0; typedCount = 0;
+    elScore.textContent = "0";
+    elMiss.textContent = "0";
+    elKpm.textContent = "0";
+    elTime.textContent = "—";
+    elResult.textContent = "";
+    elResult.className = "result";
+
+    deck = shuffle([...ITEMS]);
+    nextQuestion();
+  }
+
+  // ===== 入力判定（複数候補） =====
+  elInput.addEventListener("keydown", (e)=>{
+    if(!timer) return;
+
+    const key = e.key;
+
+    if(key === "Escape"){
+      e.preventDefault();
+      nextQuestion();
+      return;
+    }
+
+    if(key === "Backspace"){
+      e.preventDefault();
+      if(typed.length > 0){
+        typed = typed.slice(0, -1);
+        renderGuide();
+        elResult.textContent = "";
+        elResult.className = "result";
+      }
+      // 画面のinput欄は見た目だけ（自前でtyped管理）
+      elInput.value = typed;
+      return;
+    }
+
+    if(key === "Enter"){
+      e.preventDefault();
+      return;
+    }
+
+    if(key.length !== 1) return;
+
+    e.preventDefault();
+    typedCount++;
+
+    const ch = key.toLowerCase();
+    const nextTyped = typed + ch;
+
+    // どれかの候補が nextTyped を前方一致していればOK
+    const okPrefix = variants.some(v => v.startsWith(nextTyped));
+
+    if(okPrefix){
+      typed = nextTyped;
+      elInput.value = typed;
+      renderGuide();
+      seOk();
+
+      // どれかの候補と完全一致したら正解
+      const okFull = variants.some(v => v === typed);
+      if(okFull){
+        score++;
+        elScore.textContent = score;
+
+        elResult.textContent = "✅ OK!";
+        elResult.className = "result ok";
+
+        setTimeout(()=>{
+          elResult.textContent = "";
+          elResult.className = "result";
+          nextQuestion();
+        }, 220);
+      }
+    }else{
+      miss++;
+      elMiss.textContent = miss;
+      elResult.textContent = "❌";
+      elResult.className = "result ng";
+      flashWrong();
+      seMiss();
+      // input欄には反映しない（typedは増やさない）
+      elInput.value = typed;
+    }
+  });
+
+  // ===== ボタン =====
+  document.getElementById("btn30").addEventListener("click", ()=>startGame(30));
+  document.getElementById("btn60").addEventListener("click", ()=>startGame(60));
+  document.getElementById("resetBtn").addEventListener("click", resetGame);
+  document.getElementById("skipBtn").addEventListener("click", ()=>nextQuestion());
+
+  document.getElementById("closeResult").addEventListener("click", closeResult);
+  document.getElementById("again60").addEventListener("click", ()=>startGame(60));
+
+  // 起動時：画像とガイドだけ表示（開始はボタン）
+  resetGame();
+  </script>
+</body>
+
+</html>
